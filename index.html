@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CasiGoats - Call My Slot</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #121212;
+            color: white;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .logo {
+            width: 50px;
+            height: 50px;
+        }
+        .title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        input {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 1em;
+            background-color: #333;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: #ff8800;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #ff6600;
+        }
+        #calls {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        p {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .bonus-hunt {
+            margin-top: 20px;
+        }
+        .bonus-hunt a {
+            color: #ff8800;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+        .bonus-hunt a:hover {
+            color: #ff6600;
+        }
+        .admin-login {
+            margin-top: 30px;
+        }
+        .admin-section {
+            margin-top: 30px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="title-container">
+        <img class="logo" src="https://images-sihv2.prd.dlivecdn.com/fit-in/50x50/filters:quality(100)/avatar/23a81548-da94-11ef-9b8f-fe68f53f2bae" alt="CasiGoats Logo">
+        <h1>CasiGoats - Call My Slot 🎰</h1>
+    </div>
+    
+    <input type="text" id="pseudo" placeholder="Ton pseudo">
+    <input type="text" id="slot" placeholder="Nom de la slot">
+    <button onclick="ajouterCall()">📢 Envoyer</button>
+    
+    <h2>📜 Liste des Calls 📜</h2>
+    <div id="calls"></div>
+
+    <div class="bonus-hunt">
+        <h2>🔥 Bonus Hunt 🔥</h2>
+        <a href="https://hunt.willwin.gg/sessions/casigoats/37" target="_blank">Voir le Bonus Hunt</a>
+    </div>
+
+    <div class="admin-login">
+        <h2>🔑 Connexion Admin</h2>
+        <input type="password" id="adminCode" placeholder="Code Admin">
+        <button onclick="verifierAdmin()">Se connecter</button>
+    </div>
+
+    <div class="admin-section" id="adminSection">
+        <h2>🔧 Admin Panel 🔧</h2>
+        <button onclick="resetCalls()">🗑️ Réinitialiser la liste</button>
+    </div>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZHgRSZh5jYGgwvXu0QR1SvuagtUkuF2c",
+            authDomain: "calltest-ecb13.firebaseapp.com",
+            databaseURL: "https://calltest-ecb13-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "calltest-ecb13",
+            storageBucket: "calltest-ecb13.firebasestorage.app",
+            messagingSenderId: "933591038229",
+            appId: "1:933591038229:web:1f6065608cb937e9b3911c",
+            measurementId: "G-FF1FWC3TSW"
+        };
+
+        // Initialiser Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Fonctions d'administration
+        function verifierAdmin() {
+            const code = document.getElementById("adminCode").value;
+            if (code === "tesnet0410") {
+                document.getElementById("adminSection").style.display = "block";
+                alert("Connexion admin réussie !");
+            } else {
+                alert("Code incorrect !");
+            }
+        }
+
+        function resetCalls() {
+            if (confirm("Êtes-vous sûr de vouloir tout supprimer ?")) {
+                database.ref("calls").remove();
+            }
+        }
+
+        // Gestion des calls
+        function ajouterCall() {
+            const pseudo = document.getElementById("pseudo").value.trim();
+            const slot = document.getElementById("slot").value.trim();
+
+            if (!pseudo || !slot) {
+                alert("Veuillez remplir tous les champs !");
+                return;
+            }
+
+            database.ref("calls").push({
+                pseudo: pseudo,
+                slot: slot,
+                date: firebase.database.ServerValue.TIMESTAMP
+            });
+
+            document.getElementById("pseudo").value = "";
+            document.getElementById("slot").value = "";
+        }
+
+        // Affichage en temps réel
+        database.ref("calls").orderByChild("date").on("value", (snapshot) => {
+            const callsContainer = document.getElementById("calls");
+            callsContainer.innerHTML = "";
+            
+            snapshot.forEach((childSnapshot) => {
+                const key = childSnapshot.key;
+                const data = childSnapshot.val();
+                callsContainer.innerHTML += `
+                    <p>
+                        <strong>${data.pseudo}</strong> 
+                        a call la slot 
+                        <strong>${data.slot}</strong>
+                        <button onclick="supprimerCall('${key}')">❌</button>
+                    </p>
+                `;
+            });
+        });
+
+        function supprimerCall(key) {
+            if (confirm("Supprimer ce call ?")) {
+                database.ref(`calls/${key}`).remove();
+            }
+        }
+    </script>
+</body>
+</html>
